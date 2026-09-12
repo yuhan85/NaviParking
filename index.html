@@ -183,6 +183,11 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 .btn-link{font-size:14px;font-weight:600;color:#5B687D;padding:6px;margin-top:-6px;position:relative;z-index:2}
 .fine{font-size:12px;color:#6B7688;text-align:center;line-height:1.4;margin-top:-4px}
 
+.back-btn{position:absolute;top:58px;left:16px;width:36px;height:36px;border-radius:50%;background:#F2F4F7;color:#0B0B0C;display:flex;align-items:center;justify-content:center;z-index:6;transition:transform .12s}
+.back-btn svg{width:18px;height:18px}
+.back-btn:active{transform:scale(.9)}
+.back-btn.dark{background:rgba(255,255,255,.14);color:#fff;top:60px}
+.app-h.indent{padding-left:44px}
 /* search */
 .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;padding:24px 22px 40px;box-shadow:0 -16px 40px rgba(11,18,32,.14);z-index:3}
 .sheet-h{font-size:21px;font-weight:700;letter-spacing:-.02em;margin-bottom:14px}
@@ -243,7 +248,7 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 .scr.on.scr-confirm .btn-primary{animation:up .5s ease 1s both}
 
 /* nav */
-.nav-banner{position:absolute;top:0;left:0;right:0;background:var(--ink);color:#fff;padding:58px 20px 16px;z-index:3;border-radius:0 0 22px 22px;box-shadow:0 12px 30px rgba(11,18,32,.3)}
+.nav-banner{position:absolute;top:0;left:0;right:0;background:var(--ink);color:#fff;padding:58px 20px 16px 62px;z-index:3;border-radius:0 0 22px 22px;box-shadow:0 12px 30px rgba(11,18,32,.3)}
 .nb-main{display:flex;align-items:baseline;gap:10px}
 .nb-eta{font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1;white-space:nowrap}
 .nb-to{font-size:17px;font-weight:600;color:#C7D0DC;white-space:nowrap}
@@ -514,7 +519,8 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 
       <!-- STATE 3: three options -->
       <div class="scr scr-match" id="scr-match">
-        <h2 class="app-h found"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>3 spots for you.</h2>
+        <button class="back-btn" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <h2 class="app-h found indent"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>3 spots for you.</h2>
         <div class="meta-line">Picked from 14 nearby · based on your preferences</div>
         <div class="opts" id="opts">
           <button class="opt-card sel" data-spot="a" style="--c:#2AB64F"><span class="oc-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 22s7-7.4 7-13a7 7 0 1 0-14 0c0 5.6 7 13 7 13z"/></svg>Closest</span><span class="oc-main"><b>123 Example Street</b><span>Private driveway · 3 min walk</span></span><span class="oc-price">$12</span></button>
@@ -527,6 +533,7 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 
       <!-- STATE 4: reserved -->
       <div class="scr scr-confirm" id="scr-confirm">
+        <button class="back-btn" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
         <div class="check-wrap"><svg class="bigcheck" viewBox="0 0 96 96"><circle cx="48" cy="48" r="44"/><path d="M30 50l12 12 24-26"/></svg></div>
         <h2 class="app-h c">You're all set.</h2>
         <div class="res-card">
@@ -543,6 +550,7 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
       <div class="scr edge" id="scr-nav">
         <div class="map full" data-map="nav"></div>
         <div class="nav-banner">
+          <button class="back-btn dark" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
           <div class="nb-main"><div class="nb-eta" id="navEta">3 min</div><div class="nb-to" id="navTo">→ Parking</div></div>
           <div class="nb-turn"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span><span id="navTurn">Head north on Brunswick St</span></div>
         </div>
@@ -682,6 +690,21 @@ const Demo = {
     startDrive();
     wowLater(()=>startWow(), 2600);
   },
+  back(){
+    if(this.state==='match'){ clearTimers(); this.show('home'); }
+    else if(this.state==='confirm'){ this.show('match'); }
+    else if(this.state==='nav'){
+      clearTimers(); hideWow();
+      const svg = document.querySelector('.m-nav');
+      svg.classList.remove('arrived');
+      svg.querySelector('.drive').style.strokeDashoffset = 0;
+      svg.querySelector('.car').setAttribute('transform','translate(50,392)');
+      const sp = SPOTS[selected];
+      $('navEta').textContent=sp.driveMins+' min'; $('navTo').textContent='→ Parking'; $('navTurn').textContent=sp.turns[0][1];
+      $('navSub').textContent=`${sp.name} · held until 10:30 PM`;
+      this.show('confirm');
+    }
+  },
   reset(){
     clearTimers();
     hideWow();
@@ -765,6 +788,7 @@ function selectSpot(id){
     svg.querySelector('.walk-txt').textContent = sp.walk+' min walk';
   });
 }
+document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click', e=>{ e.currentTarget.blur(); Demo.back(); }));
 document.querySelectorAll('.opt-card').forEach(c=>c.addEventListener('click', e=>{ e.currentTarget.blur(); selectSpot(c.dataset.spot); }));
 
 /* =========================================================
