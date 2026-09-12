@@ -175,6 +175,13 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 .meta-row{display:flex;gap:6px}
 .meta{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:12px;background:#F2F4F7;font-size:12.5px;font-weight:600;color:#33405A;white-space:nowrap}
 .meta svg{width:16px;height:16px}
+.dur{padding:11px 13px;border-radius:15px;background:#F2F4F7}
+.dur-l{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#6B7688;font-weight:600;margin-bottom:8px}
+.dur-l b{color:#0B0B0C;font-weight:800}
+.dur-chips{display:flex;gap:6px}
+.dur-chips button{flex:1;height:34px;border-radius:10px;background:#fff;border:1.5px solid #E3E8EF;font-weight:800;font-size:14px;color:#0B0B0C;transition:all .15s}
+.dur-chips button.sel{background:var(--green2);border-color:var(--green2);color:#fff}
+.dur-chips button:active{transform:scale(.95)}
 .map{position:relative;border-radius:18px;overflow:hidden;background:#EAEEF3;flex:1;min-height:120px}
 .map.full{border-radius:0;position:absolute;inset:0;flex:none}
 .map-svg{position:absolute;inset:0;width:100%;height:100%}
@@ -502,6 +509,10 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
           <div class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l1.6-4.5A2 2 0 0 1 8.5 6h7a2 2 0 0 1 1.9 1.5L19 12v6H5z"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>Sedan</div>
           <div class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h6"/></svg>Prefs</div>
         </div>
+        <div class="dur">
+          <div class="dur-l"><span>How long will you park?</span><b id="durUntil">6:30 – 10:30 PM</b></div>
+          <div class="dur-chips" id="durChips"><button data-h="2">2h</button><button data-h="3">3h</button><button class="sel" data-h="4">4h</button><button data-h="6">6h</button></div>
+        </div>
         <div class="map" data-map="home"></div>
         <button class="btn-primary" id="btnFind">Find My Parking</button>
         <div class="fine">We'll find, reserve and navigate you to the best available spot.</div>
@@ -542,7 +553,7 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
         <div class="res-card">
           <div class="rc-label">Parking reserved</div>
           <div class="rc-addr" id="rcAddr">123 Example Street</div>
-          <div class="rc-row"><span>6:30 PM – 10:30 PM</span><span class="rc-price" id="rcPrice">$12</span></div>
+          <div class="rc-row"><span id="rcTime">6:30 PM – 10:30 PM</span><span class="rc-price" id="rcPrice">$12</span></div>
           <div class="rc-row muted"><span id="rcSub">Private driveway · 3 min walk to Halifax Convention Centre</span></div>
         </div>
         <div class="spacer"></div>
@@ -589,17 +600,30 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
    MAP — stylized downtown (inline SVG, no external deps)
    ========================================================= */
 const SPOTS = {
-  a:{tag:'Closest', name:'123 Example Street', type:'Private driveway', walk:3, price:12, driveMins:3, x:190, y:118, label:'123 Example St',
+  a:{tag:'Closest', name:'123 Example Street', type:'Private driveway', walk:3, rate:3, driveMins:3, x:190, y:118, label:'123 Example St',
      drive:'M50,392 V140 H210 V118 H192', walkPath:'M190,118 H210 V140 H250 V152', pill:[232,127],
      turns:[[0,'Head north on Brunswick St'],[195,'Turn right onto Prince St · 60 m'],[252,'Continue on Prince St'],[395,'Turn left onto Grafton St'],[420,'Turn left into the driveway']]},
-  b:{tag:'Indoor', name:'Scotia Square Garage', type:'Covered garage', walk:5, price:18, driveMins:2, x:176, y:262, label:'Scotia Square Garage',
+  b:{tag:'Indoor', name:'Scotia Square Garage', type:'Covered garage', walk:5, rate:4.5, driveMins:2, x:176, y:262, label:'Scotia Square Garage',
      drive:'M50,392 V300 H176 V272', walkPath:'M176,262 V220 H250 V208', pill:[148,241],
      turns:[[0,'Head north on Brunswick St'],[55,'Turn right onto Blowers St · 40 m'],[92,'Continue on Blowers St'],[200,'Turn left into the garage']]},
-  c:{tag:'Cheapest', name:'Grafton Street Lot', type:'Open-air lot', walk:8, price:8, driveMins:2, x:250, y:340, label:'Grafton St Lot',
+  c:{tag:'Cheapest', name:'Grafton Street Lot', type:'Open-air lot', walk:8, rate:2, driveMins:2, x:250, y:340, label:'Grafton St Lot',
      drive:'M50,392 V380 H250 V352', walkPath:'M250,340 V300 H290 V220 H250 V208', pill:[270,316],
      turns:[[0,'Head north on Brunswick St'],[12,'Turn right onto Spring Garden Rd'],[190,'Turn left into the lot']]}
 };
 let selected = 'a';
+let hours = 4;
+const START_MIN = 18*60+30; // 6:30 PM
+function fmtTime(min){ min = ((min % 1440) + 1440) % 1440; let h = Math.floor(min/60), m = min%60; const ap = h>=12 ? 'PM' : 'AM'; h = h%12; if(h===0) h=12; return `${h}:${String(m).padStart(2,'0')} ${ap}`; }
+function fmtMoney(v){ return v % 1 === 0 ? `$${v}` : `$${v.toFixed(2)}`; }
+const priceOf = id => fmtMoney(SPOTS[id].rate * hours);
+const endTime = () => fmtTime(START_MIN + hours*60);
+const window_ = () => `${fmtTime(START_MIN)} – ${endTime()}`;
+function setHours(h){
+  hours = h;
+  document.querySelectorAll('#durChips button').forEach(b=>b.classList.toggle('sel', +b.dataset.h===h));
+  document.getElementById('durUntil').textContent = window_().replace(' PM –',' –');
+  Object.keys(SPOTS).forEach(id=>{ const el=document.querySelector(`.opt-card[data-spot="${id}"] .oc-price`); if(el) el.textContent = priceOf(id); });
+}
 
 function mapSVG(mode){
   const vb = {home:'0 30 360 300', search:'0 -60 300 640', match:'20 92 340 272', nav:'0 -85 300 640'}[mode];
@@ -682,11 +706,11 @@ const Demo = {
   match(){ this.show('match'); },
   reserve(){
     const sp = SPOTS[selected];
-    $('rcAddr').textContent = sp.name; $('rcPrice').textContent = '$'+sp.price;
+    $('rcAddr').textContent = sp.name; $('rcPrice').textContent = priceOf(selected); $('rcTime').textContent = window_();
     $('rcSub').textContent = `${sp.type} · ${sp.walk} min walk to Halifax Convention Centre`;
     $('navEta').textContent = sp.driveMins+' min'; $('navTo').textContent='→ Parking';
     $('navTurn').textContent = sp.turns[0][1];
-    $('navSub').textContent = `${sp.name} · held until 10:30 PM`;
+    $('navSub').textContent = `${sp.name} · held until ${endTime()}`;
     this.show('confirm');
   },
   nav(){
@@ -705,7 +729,7 @@ const Demo = {
       svg.querySelector('.car').setAttribute('transform','translate(50,392)');
       const sp = SPOTS[selected];
       $('navEta').textContent=sp.driveMins+' min'; $('navTo').textContent='→ Parking'; $('navTurn').textContent=sp.turns[0][1];
-      $('navSub').textContent=`${sp.name} · held until 10:30 PM`;
+      $('navSub').textContent=`${sp.name} · held until ${endTime()}`;
       this.show('confirm');
     }
   },
@@ -716,10 +740,10 @@ const Demo = {
     svg.classList.remove('arrived');
     svg.querySelector('.drive').style.strokeDashoffset = 0;
     svg.querySelector('.car').setAttribute('transform','translate(50,392)');
-    selectSpot('a');
+    selectSpot('a'); setHours(4);
     const sp = SPOTS.a;
     $('navEta').textContent=sp.driveMins+' min'; $('navTo').textContent='→ Parking'; $('navTurn').textContent=sp.turns[0][1];
-    $('navSub').textContent=`${sp.name} · held until 10:30 PM`;
+    $('navSub').textContent=`${sp.name} · held until ${endTime()}`;
     this.show('home');
   }
 };
@@ -753,7 +777,7 @@ function startDrive(){
     svg.classList.add('arrived');
     $('navEta').textContent=sp.walk+' min'; $('navTo').textContent='walk → Convention Centre';
     $('navTurn').textContent=`Parked · ${sp.walk} min walk to the venue`;
-    $('navSub').textContent=`Parked at ${sp.name} · held until 10:30 PM`;
+    $('navSub').textContent=`Parked at ${sp.name} · held until ${endTime()}`;
   }
 }
 
@@ -792,6 +816,8 @@ function selectSpot(id){
     svg.querySelector('.walk-txt').textContent = sp.walk+' min walk';
   });
 }
+document.querySelectorAll('#durChips button').forEach(b=>b.addEventListener('click', e=>{ e.currentTarget.blur(); setHours(+b.dataset.h); }));
+setHours(4);
 document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click', e=>{ e.currentTarget.blur(); Demo.back(); }));
 document.querySelectorAll('.opt-card').forEach(c=>c.addEventListener('click', e=>{ e.currentTarget.blur(); selectSpot(c.dataset.spot); }));
 
