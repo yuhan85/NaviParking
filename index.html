@@ -22,11 +22,13 @@ html,body{height:100%;background:var(--bg);color:var(--white);overflow:hidden;
   -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
 
+/* ---------- Stage: 1600x900 design, scaled to fit any window ---------- */
+#stage{position:absolute;left:50%;top:50%;width:1600px;height:900px;transform:translate(-50%,-50%) scale(var(--s,1));transform-origin:center center;overflow:hidden;background:var(--bg)}
 /* ---------- Deck ---------- */
 .deck{position:fixed;inset:0;user-select:none;cursor:default}
 .deck::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(ellipse 55% 45% at 50% 55%,rgba(255,255,255,.035),transparent 70%)}
-.slide{position:absolute;inset:0;padding:6vh 7vw;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+.slide{position:absolute;inset:0;padding:54px 112px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
   opacity:0;transform:translateY(18px);transition:opacity .5s ease,transform .5s ease;pointer-events:none;z-index:1}
 .slide.active{opacity:1;transform:none;pointer-events:auto;z-index:2}
 
@@ -35,13 +37,13 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 .slide.active .up{animation:up .75s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0s)}
 @keyframes up{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
 
-.h1{font-size:clamp(42px,5.8vw,96px);font-weight:800;letter-spacing:-.025em;line-height:1;max-width:20ch}
+.h1{font-size:clamp(42px,92.8px,96px);font-weight:800;letter-spacing:-.025em;line-height:1;max-width:20ch}
 .hl,.hl-o,.hl-b,.hl-r{white-space:nowrap}
 .hl{color:var(--green)}.hl-o{color:var(--orange)}.hl-b{color:var(--blue)}.hl-r{color:var(--red)}
-.h1.xl{font-size:clamp(50px,7vw,120px)}
-.sub{font-size:clamp(17px,1.4vw,26px);color:var(--muted);line-height:1.45;max-width:52ch;font-weight:500}
+.h1.xl{font-size:clamp(50px,112px,120px)}
+.sub{font-size:clamp(17px,22.4px,26px);color:var(--muted);line-height:1.45;max-width:52ch;font-weight:500}
 .sub strong{color:var(--white);font-weight:600}
-.sub.stat{font-size:clamp(22px,2.2vw,36px);font-weight:600;color:var(--muted)}
+.sub.stat{font-size:clamp(22px,35.2px,36px);font-weight:600;color:var(--muted)}
 .sub.stat strong{font-weight:900;color:inherit}
 .sub.stat .hl-o strong{color:var(--orange)}
 .sub.stat .plus{color:var(--muted2);margin:0 .2em}
@@ -58,19 +60,19 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 .hud .progress{font-variant-numeric:tabular-nums}
 
 /* ---------- Slide 1 ---------- */
-.s1{gap:3.2vh}
-.scene{width:min(880px,78vw)}
+.s1{gap:28.8px}
+.scene{width:min(880px,1248px)}
 .scene svg{width:100%;height:auto;display:block}
-.journey{display:flex;align-items:center;gap:14px;font-size:clamp(14px,1.2vw,20px);font-weight:600}
+.journey{display:flex;align-items:center;gap:14px;font-size:clamp(14px,19.2px,20px);font-weight:600}
 .journey .pill{padding:11px 22px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--white)}
 .journey .pill.bad{border-color:rgba(255,69,58,.5);color:var(--red);background:rgba(255,69,58,.12)}
 .journey .jarr{color:var(--muted2)}
 
 /* ---------- Slide 2 ---------- */
-.s2{gap:5vh}
-.s2grid{display:grid;grid-template-columns:auto auto;gap:7vw;align-items:center}
+.s2{gap:45px}
+.s2grid{display:grid;grid-template-columns:auto auto;gap:112px;align-items:center}
 .flow{display:flex;flex-direction:column;align-items:center}
-.fbox{padding:18px 34px;border-radius:16px;border:1px solid var(--line);background:var(--card);font-size:clamp(14px,1.15vw,19px);font-weight:700;letter-spacing:.16em;
+.fbox{padding:18px 34px;border-radius:16px;border:1px solid var(--line);background:var(--card);font-size:clamp(14px,18.4px,19px);font-weight:700;letter-spacing:.16em;
   display:flex;align-items:center;gap:12px}
 .fbox svg{width:20px;height:20px}
 .fbox.green{background:var(--green-soft);border-color:rgba(48,209,88,.5);color:var(--green)}
@@ -79,40 +81,40 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 .fline::after{content:"";position:absolute;left:-5px;bottom:-2px;border:6px solid transparent;border-top:8px solid var(--green);border-bottom:0}
 @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 .s2txt{text-align:left;display:flex;flex-direction:column;gap:18px}
-.strike{font-size:clamp(26px,2.8vw,46px);font-weight:700;color:#D1D1D6;position:relative;display:inline-block;align-self:flex-start}
+.strike{font-size:clamp(26px,44.8px,46px);font-weight:700;color:#D1D1D6;position:relative;display:inline-block;align-self:flex-start}
 .strike::after{content:"";position:absolute;left:-2%;top:54%;height:4px;width:0;background:var(--orange);border-radius:2px}
 .slide.active .strike::after{animation:strike .5s ease .9s both}
 @keyframes strike{to{width:104%}}
-.big{font-size:clamp(38px,4.6vw,76px);font-weight:800;letter-spacing:-.025em;color:var(--green);line-height:1.05}
+.big{font-size:clamp(38px,73.6px,76px);font-weight:800;letter-spacing:-.025em;color:var(--green);line-height:1.05}
 
 /* ---------- Slide 3 / 4 ---------- */
-.s3{justify-content:flex-start;padding-top:6vh}
-.s3 .h1{font-size:clamp(34px,4vw,62px)}
-.s4{justify-content:flex-start;padding-top:6.5vh}
+.s3{justify-content:flex-start;padding-top:54px}
+.s3 .h1{font-size:clamp(34px,64px,62px)}
+.s4{justify-content:flex-start;padding-top:58.5px}
 
 /* ---------- Slide 5 ---------- */
-.s5{gap:2.6vh}
-.avg{padding:12px 28px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:clamp(16px,1.4vw,24px);color:var(--muted);font-weight:600}
+.s5{gap:23.4px}
+.avg{padding:12px 28px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:clamp(16px,22.4px,24px);color:var(--muted);font-weight:600}
 .avg strong{color:var(--white);font-weight:900;margin-left:10px;font-size:1.15em}
 .txn{display:flex;align-items:stretch;gap:14px}
 .tcard{min-width:170px;padding:20px 26px;border:1px solid var(--line);border-radius:22px;background:var(--card);display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left}
 .tcard.green{background:rgba(48,209,88,.08);border:2px solid var(--green)}
 .tcard .tl{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
-.tcard .tv{font-size:clamp(34px,3.4vw,54px);font-weight:900;letter-spacing:-.02em;line-height:1;white-space:nowrap}
+.tcard .tv{font-size:clamp(34px,54.4px,54px);font-weight:900;letter-spacing:-.02em;line-height:1;white-space:nowrap}
 .tcard.orange .tv{color:var(--orange)}
 .tcard.green .tv{color:var(--green)}
-.tcard .ts{font-size:clamp(14px,1.1vw,18px);color:var(--muted);font-weight:600}
+.tcard .ts{font-size:clamp(14px,17.6px,18px);color:var(--muted);font-weight:600}
 .tarrow{display:flex;align-items:center;color:var(--muted2);font-size:26px}
-.divider{display:flex;align-items:center;gap:22px;width:min(1100px,80vw);font-size:14px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.divider{display:flex;align-items:center;gap:22px;width:min(1100px,1280px);font-size:14px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);font-weight:700}
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.18)}
-.targets{display:grid;grid-template-columns:1fr 1fr;gap:22px;width:min(1100px,80vw)}
+.targets{display:grid;grid-template-columns:1fr 1fr;gap:22px;width:min(1100px,1280px)}
 .target{position:relative;overflow:hidden;display:flex;align-items:center;gap:22px;padding:26px 30px;border-radius:24px;border:1px solid var(--line);background:var(--card);text-align:left;min-height:130px}
 .target.green{background:rgba(48,209,88,.07);border-color:rgba(48,209,88,.5)}
 .ticon{width:64px;height:64px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:var(--green);background:rgba(48,209,88,.1);border:1.5px solid rgba(48,209,88,.5)}
 .ticon svg{width:28px;height:28px}
 .tnum{position:relative;z-index:1}
-.tnum strong{display:block;font-size:clamp(40px,4.4vw,72px);font-weight:900;color:var(--green);letter-spacing:-.02em;line-height:1}
-.tnum span{display:block;font-size:clamp(15px,1.3vw,22px);color:var(--white);font-weight:600;margin-top:6px}
+.tnum strong{display:block;font-size:clamp(40px,70.4px,72px);font-weight:900;color:var(--green);letter-spacing:-.02em;line-height:1}
+.tnum span{display:block;font-size:clamp(15px,20.8px,22px);color:var(--white);font-weight:600;margin-top:6px}
 .bars{position:absolute;right:26px;bottom:18px;display:flex;align-items:flex-end;gap:8px;height:70px}
 .bars i{width:14px;border-radius:4px 4px 0 0;background:rgba(48,209,88,.28);display:block}
 .bars i:nth-child(1){height:22%}.bars i:nth-child(2){height:38%}.bars i:nth-child(3){height:55%}.bars i:nth-child(4){height:74%;background:rgba(48,209,88,.45)}.bars i:nth-child(5){height:100%;background:rgba(48,209,88,.7)}
@@ -122,10 +124,10 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 .foot{font-size:13px;color:var(--muted2);letter-spacing:.04em}
 
 /* ---------- Slide 7 ---------- */
-.s7{gap:3.6vh}
-.closing{font-size:clamp(24px,2.5vw,42px);line-height:1.3;color:var(--white);font-weight:600}
-.small{font-size:clamp(14px,1.15vw,19px);color:var(--muted)}
-.logo{display:flex;align-items:center;gap:14px;font-size:clamp(32px,3.2vw,56px);font-weight:900;letter-spacing:-.02em;margin-top:2vh}
+.s7{gap:32.4px}
+.closing{font-size:clamp(24px,40px,42px);line-height:1.3;color:var(--white);font-weight:600}
+.small{font-size:clamp(14px,18.4px,19px);color:var(--muted)}
+.logo{display:flex;align-items:center;gap:14px;font-size:clamp(32px,51.2px,56px);font-weight:900;letter-spacing:-.02em;margin-top:18px}
 .logo svg{width:1.6em;height:1.6em}
 .logo small{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.08em;margin-left:6px}
 
@@ -297,16 +299,17 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
 @keyframes halo{0%{transform:scale(.6);opacity:.45}100%{transform:scale(2.2);opacity:0}}
 
 /* ---------- Wow moment ---------- */
-.wow{position:fixed;left:calc(50% + 10px);right:5%;top:50%;transform:translateY(-50%);z-index:9;opacity:0;pointer-events:none;transition:opacity .6s;text-align:left;display:flex;flex-direction:column;gap:clamp(10px,1.6vh,20px)}
+.wow{position:fixed;left:calc(50% + 10px);right:5%;top:50%;transform:translateY(-50%);z-index:9;opacity:0;pointer-events:none;transition:opacity .6s;text-align:left;display:flex;flex-direction:column;gap:clamp(10px,14.4px,20px)}
 .wow.show{opacity:1}
-.wow .l{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.2,1);font-size:clamp(32px,3.8vw,64px);font-weight:800;letter-spacing:-.025em;line-height:1.05}
+.wow .l{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.2,1);font-size:clamp(32px,60.8px,64px);font-weight:800;letter-spacing:-.025em;line-height:1.05}
 .wow .l.in{opacity:1;transform:none}
-.wow .l0{font-size:clamp(18px,1.7vw,28px);font-weight:500;color:var(--muted);letter-spacing:-.01em;margin-bottom:8px}
+.wow .l0{font-size:clamp(18px,27.2px,28px);font-weight:500;color:var(--muted);letter-spacing:-.01em;margin-bottom:8px}
 .wow .l.in.dim{opacity:.45}
-.wow .l4{font-size:clamp(15px,1.25vw,22px);font-weight:700;color:var(--green);letter-spacing:.18em;text-transform:uppercase;margin-top:14px}
+.wow .l4{font-size:clamp(15px,20px,22px);font-weight:700;color:var(--green);letter-spacing:.18em;text-transform:uppercase;margin-top:14px}
 </style>
 </head>
 <body>
+<div id="stage">
 
 <div class="deck" id="deck">
 
@@ -579,6 +582,7 @@ button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit
   <div class="brand"><svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M17,84 V22 L67,84 V52" fill="none" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><path d="M17,84 V22 L67,84 V52" fill="none" stroke="#000000" stroke-width="2.6" stroke-dasharray="6.5 6" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(67,24)"><path d="M0,22 C-6,13 -14,7 -14,-2 a14,14 0 0 1 28,0 c0,9 -8,15 -14,24z" fill="#22C55E"/><text y="4" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">P</text><circle cy="14.5" r="2.4" fill="#fff"/></g></svg><span class="wm"><em>Navi</em>Parking</span></div>
   <div class="progress" id="progress">01 / 06</div>
 </div>
+</div>
 
 <script>
 /* =========================================================
@@ -825,13 +829,18 @@ $('deck').addEventListener('click', e=>{
 
 /* Phone scale to viewport */
 function layout(){
-  const h = window.innerHeight;
-  const ps = Math.min(1.1, (h - 200) / 760);
-  const top = (h - 760*ps) / 2 + 52;
-  document.documentElement.style.setProperty('--ps', ps.toFixed(3));
+  const vw = (window.visualViewport ? window.visualViewport.width : 0) || document.documentElement.clientWidth || window.innerWidth;
+  const vh = (window.visualViewport ? window.visualViewport.height : 0) || document.documentElement.clientHeight || window.innerHeight;
+  const s = Math.min(vw/1600, vh/900);
+  document.getElementById('stage').style.setProperty('--s', s.toFixed(4));
+  const h = 900, ps = 0.92, top = (h - 760*ps) / 2 + 52;
+  document.documentElement.style.setProperty('--ps', ps);
   document.documentElement.style.setProperty('--phone-top', top.toFixed(0)+'px');
 }
-window.addEventListener('resize', layout); layout();
+window.addEventListener('resize', layout);
+window.addEventListener('orientationchange', ()=>setTimeout(layout,150));
+if(window.visualViewport) window.visualViewport.addEventListener('resize', layout);
+layout(); setTimeout(layout,100); setTimeout(layout,600);
 
 const start = parseInt(location.hash.slice(1)) || 1;
 go(start-1);
