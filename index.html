@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NaviParking — Parking finds you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ---------- Base ---------- */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#000000;--bg2:#0A0A0A;--ink:#0B0B0C;--white:#FFFFFF;
+  --muted:#A1A1A6;--muted2:#6E6E73;
+  --green:#30D158;--green2:#2AB64F;--green-soft:rgba(48,209,88,.16);
+  --blue:#0A84FF;--orange:#FF9F0A;--red:#FF453A;
+  --line:rgba(255,255,255,.12);--card:#151517;
+  --ps:1;--phone-top:160px;
+}
+html,body{height:100%;background:var(--bg);color:var(--white);overflow:hidden;
+  font-family:ui-rounded,"SF Pro Rounded","Nunito","Varela Round","Arial Rounded MT Bold",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+
+/* ---------- Deck ---------- */
+.deck{position:fixed;inset:0;user-select:none;cursor:default}
+.deck::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 55% 45% at 50% 55%,rgba(255,255,255,.035),transparent 70%)}
+.slide{position:absolute;inset:0;padding:6vh 7vw;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  opacity:0;transform:translateY(18px);transition:opacity .5s ease,transform .5s ease;pointer-events:none;z-index:1}
+.slide.active{opacity:1;transform:none;pointer-events:auto;z-index:2}
+
+/* entrance animation for children */
+.up{opacity:0}
+.slide.active .up{animation:up .75s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0s)}
+@keyframes up{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+
+.h1{font-size:clamp(42px,5.8vw,96px);font-weight:800;letter-spacing:-.025em;line-height:1;max-width:20ch}
+.hl,.hl-o,.hl-b,.hl-r{white-space:nowrap}
+.hl{color:var(--green)}.hl-o{color:var(--orange)}.hl-b{color:var(--blue)}.hl-r{color:var(--red)}
+.h1.xl{font-size:clamp(50px,7vw,120px)}
+.sub{font-size:clamp(17px,1.4vw,26px);color:var(--muted);line-height:1.45;max-width:52ch;font-weight:500}
+.sub strong{color:var(--white);font-weight:600}
+.sub.stat{font-size:clamp(22px,2.2vw,36px);font-weight:600;color:var(--muted)}
+.sub.stat strong{font-weight:900;color:inherit}
+.sub.stat .hl-o strong{color:var(--orange)}
+.sub.stat .plus{color:var(--muted2);margin:0 .2em}
+.tag{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--green);font-weight:700}
+.arr{color:var(--green)}
+
+/* ---------- HUD ---------- */
+.hud{position:fixed;left:0;right:0;bottom:22px;padding:0 34px;display:flex;justify-content:space-between;align-items:center;
+  font-size:13px;color:var(--muted2);z-index:30;pointer-events:none;letter-spacing:.06em}
+.hud .brand{display:flex;align-items:center;gap:7px;font-weight:700;letter-spacing:0;color:#fff;font-size:15px}
+.hud .brand svg{width:24px;height:24px}
+.wm{font-weight:900;letter-spacing:-.02em}
+.wm em{font-style:normal;color:#22C55E}
+.hud .progress{font-variant-numeric:tabular-nums}
+
+/* ---------- Slide 1 ---------- */
+.s1{gap:3.2vh}
+.scene{width:min(880px,78vw)}
+.scene svg{width:100%;height:auto;display:block}
+.journey{display:flex;align-items:center;gap:14px;font-size:clamp(14px,1.2vw,20px);font-weight:600}
+.journey .pill{padding:11px 22px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--white)}
+.journey .pill.bad{border-color:rgba(255,69,58,.5);color:var(--red);background:rgba(255,69,58,.12)}
+.journey .jarr{color:var(--muted2)}
+
+/* ---------- Slide 2 ---------- */
+.s2{gap:5vh}
+.s2grid{display:grid;grid-template-columns:auto auto;gap:7vw;align-items:center}
+.flow{display:flex;flex-direction:column;align-items:center}
+.fbox{padding:18px 34px;border-radius:16px;border:1px solid var(--line);background:var(--card);font-size:clamp(14px,1.15vw,19px);font-weight:700;letter-spacing:.16em;
+  display:flex;align-items:center;gap:12px}
+.fbox svg{width:20px;height:20px}
+.fbox.green{background:var(--green-soft);border-color:rgba(48,209,88,.5);color:var(--green)}
+.fline{width:2px;height:54px;background:linear-gradient(var(--muted2),var(--green));position:relative;transform-origin:top;animation:grow .5s ease both}
+.slide.active .fline{animation:grow .5s ease both;animation-delay:var(--d,0s)}
+.fline::after{content:"";position:absolute;left:-5px;bottom:-2px;border:6px solid transparent;border-top:8px solid var(--green);border-bottom:0}
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.s2txt{text-align:left;display:flex;flex-direction:column;gap:18px}
+.strike{font-size:clamp(26px,2.8vw,46px);font-weight:700;color:#D1D1D6;position:relative;display:inline-block;align-self:flex-start}
+.strike::after{content:"";position:absolute;left:-2%;top:54%;height:4px;width:0;background:var(--orange);border-radius:2px}
+.slide.active .strike::after{animation:strike .5s ease .9s both}
+@keyframes strike{to{width:104%}}
+.big{font-size:clamp(38px,4.6vw,76px);font-weight:800;letter-spacing:-.025em;color:var(--green);line-height:1.05}
+
+/* ---------- Slide 3 / 4 ---------- */
+.s3{justify-content:flex-start;padding-top:6vh}
+.s3 .h1{font-size:clamp(34px,4vw,62px)}
+.s4{justify-content:flex-start;padding-top:6.5vh}
+
+/* ---------- Slide 5 ---------- */
+.s5{gap:2.6vh}
+.avg{padding:12px 28px;border-radius:999px;background:var(--card);border:1px solid var(--line);font-size:clamp(16px,1.4vw,24px);color:var(--muted);font-weight:600}
+.avg strong{color:var(--white);font-weight:900;margin-left:10px;font-size:1.15em}
+.txn{display:flex;align-items:stretch;gap:14px}
+.tcard{min-width:170px;padding:20px 26px;border:1px solid var(--line);border-radius:22px;background:var(--card);display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left}
+.tcard.green{background:rgba(48,209,88,.08);border:2px solid var(--green)}
+.tcard .tl{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.tcard .tv{font-size:clamp(34px,3.4vw,54px);font-weight:900;letter-spacing:-.02em;line-height:1;white-space:nowrap}
+.tcard.orange .tv{color:var(--orange)}
+.tcard.green .tv{color:var(--green)}
+.tcard .ts{font-size:clamp(14px,1.1vw,18px);color:var(--muted);font-weight:600}
+.tarrow{display:flex;align-items:center;color:var(--muted2);font-size:26px}
+.divider{display:flex;align-items:center;gap:22px;width:min(1100px,80vw);font-size:14px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.18)}
+.targets{display:grid;grid-template-columns:1fr 1fr;gap:22px;width:min(1100px,80vw)}
+.target{position:relative;overflow:hidden;display:flex;align-items:center;gap:22px;padding:26px 30px;border-radius:24px;border:1px solid var(--line);background:var(--card);text-align:left;min-height:130px}
+.target.green{background:rgba(48,209,88,.07);border-color:rgba(48,209,88,.5)}
+.ticon{width:64px;height:64px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;color:var(--green);background:rgba(48,209,88,.1);border:1.5px solid rgba(48,209,88,.5)}
+.ticon svg{width:28px;height:28px}
+.tnum{position:relative;z-index:1}
+.tnum strong{display:block;font-size:clamp(40px,4.4vw,72px);font-weight:900;color:var(--green);letter-spacing:-.02em;line-height:1}
+.tnum span{display:block;font-size:clamp(15px,1.3vw,22px);color:var(--white);font-weight:600;margin-top:6px}
+.bars{position:absolute;right:26px;bottom:18px;display:flex;align-items:flex-end;gap:8px;height:70px}
+.bars i{width:14px;border-radius:4px 4px 0 0;background:rgba(48,209,88,.28);display:block}
+.bars i:nth-child(1){height:22%}.bars i:nth-child(2){height:38%}.bars i:nth-child(3){height:55%}.bars i:nth-child(4){height:74%;background:rgba(48,209,88,.45)}.bars i:nth-child(5){height:100%;background:rgba(48,209,88,.7)}
+.slide.active .bars i{animation:barup .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(.7s + var(--i,0)*.08s);transform-origin:bottom}
+@keyframes barup{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.wave{position:absolute;right:0;bottom:0;width:48%;height:70%}
+.foot{font-size:13px;color:var(--muted2);letter-spacing:.04em}
+
+/* ---------- Slide 7 ---------- */
+.s7{gap:3.6vh}
+.closing{font-size:clamp(24px,2.5vw,42px);line-height:1.3;color:var(--white);font-weight:600}
+.small{font-size:clamp(14px,1.15vw,19px);color:var(--muted)}
+.logo{display:flex;align-items:center;gap:14px;font-size:clamp(32px,3.2vw,56px);font-weight:900;letter-spacing:-.02em;margin-top:2vh}
+.logo svg{width:1.6em;height:1.6em}
+.logo small{font-size:13px;font-weight:500;color:var(--muted);letter-spacing:.08em;margin-left:6px}
+
+/* ---------- Phone ---------- */
+.phone-layer{position:fixed;left:50%;top:var(--phone-top);transform:translateX(-50%) scale(var(--ps));transform-origin:top center;
+  opacity:0;pointer-events:none;transition:opacity .5s ease,transform .9s cubic-bezier(.2,.8,.2,1);z-index:10}
+.phone-layer.show{opacity:1;pointer-events:auto}
+.phone-layer.shift{transform:translateX(calc(-50% - 270px)) scale(var(--ps))}
+.phone{width:360px;height:760px;border-radius:54px;background:#0D0F14;padding:11px;
+  box-shadow:0 50px 120px rgba(0,0,0,.9),0 0 0 1px #3A3A3C,0 0 80px rgba(255,255,255,.06),inset 0 0 0 2px #1B1B1D}
+.phone::before,.phone::after{content:"";position:absolute;background:#3A3A3C;border-radius:2px}
+.phone::before{left:-3px;top:150px;width:3px;height:70px}
+.phone::after{right:-3px;top:180px;width:3px;height:90px}
+.phone{position:relative}
+.screen-wrap{position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;background:#FFFFFF;color:var(--ink)}
+.island{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:112px;height:32px;border-radius:20px;background:#0D0F14;z-index:20}
+.statusbar{position:absolute;top:0;left:0;right:0;height:52px;display:flex;justify-content:space-between;align-items:flex-end;padding:0 30px 4px;z-index:19;font-size:15px;font-weight:600;color:var(--ink);transition:color .3s}
+.statusbar.light{color:#fff}
+.sb-icons{display:flex;gap:6px;align-items:center}
+.sb-icons i{display:block}
+.sb-sig{width:17px;height:11px;background:linear-gradient(to right,currentColor 0 3px,transparent 3px 4.5px,currentColor 4.5px 7.5px,transparent 7.5px 9px,currentColor 9px 12px,transparent 12px 13.5px,currentColor 13.5px);-webkit-mask:linear-gradient(to top,#000 40%,#000) ;
+  clip-path:polygon(0 60%,3px 60%,3px 100%,0 100%,0 60%,4.5px 45%,7.5px 45%,7.5px 100%,4.5px 100%,4.5px 45%,9px 25%,12px 25%,12px 100%,9px 100%,9px 25%,13.5px 0,17px 0,17px 100%,13.5px 100%)}
+.sb-bat{width:26px;height:12px;border:1.5px solid currentColor;border-radius:4px;position:relative;opacity:.9}
+.sb-bat::after{content:"";position:absolute;left:1.5px;top:1.5px;bottom:1.5px;width:16px;background:currentColor;border-radius:2px}
+.sb-bat::before{content:"";position:absolute;right:-4px;top:3px;width:2px;height:4px;background:currentColor;border-radius:1px}
+.homebar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:130px;height:5px;border-radius:3px;background:#0B1220;opacity:.25;z-index:20}
+.scr.edge ~ .homebar{background:#fff}
+
+.scr{position:absolute;inset:0;padding:64px 20px 30px;display:flex;flex-direction:column;gap:14px;opacity:0;transform:translateX(26px);
+  transition:opacity .32s ease,transform .32s ease;pointer-events:none;background:#fff}
+.scr.on{opacity:1;transform:none;pointer-events:auto}
+.scr.edge{padding:0}
+.app-top{display:flex;justify-content:space-between;align-items:center}
+.wordmark{display:flex;align-items:center;gap:5px;font-weight:900;font-size:18px;letter-spacing:-.02em;color:#0B0B0C}
+.wordmark svg{width:26px;height:26px}
+.avatar{width:32px;height:32px;border-radius:50%;background:#E6EAF0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#4B5768}
+.app-h{font-size:27px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.app-h.c{text-align:center}
+.dest-card{display:flex;gap:12px;align-items:center;padding:14px 16px;border-radius:16px;border:1.5px solid #0B1220;background:#fff;box-shadow:0 8px 24px rgba(11,18,32,.08)}
+.ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:none}
+.ic.pin{background:var(--green-soft)}
+.ic svg{width:20px;height:20px}
+.dest{font-size:16px;font-weight:600;letter-spacing:-.01em}
+.dest-sub{font-size:12.5px;color:#6B7688;margin-top:2px}
+.meta-row{display:flex;gap:6px}
+.meta{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:12px;background:#F2F4F7;font-size:12.5px;font-weight:600;color:#33405A;white-space:nowrap}
+.meta svg{width:16px;height:16px}
+.map{position:relative;border-radius:18px;overflow:hidden;background:#EAEEF3;flex:1;min-height:120px}
+.map.full{border-radius:0;position:absolute;inset:0;flex:none}
+.map-svg{position:absolute;inset:0;width:100%;height:100%}
+.btn-primary{width:100%;height:58px;border-radius:17px;background:var(--green2);color:#fff;font-size:17px;font-weight:700;letter-spacing:-.01em;
+  box-shadow:0 10px 24px rgba(42,182,79,.3);transition:transform .12s ease,box-shadow .12s ease;position:relative;z-index:2}
+.btn-primary:active{transform:scale(.975);box-shadow:0 4px 12px rgba(42,182,79,.25)}
+.btn-primary.sm{height:50px;font-size:15px}
+.btn-link{font-size:14px;font-weight:600;color:#5B687D;padding:6px;margin-top:-6px;position:relative;z-index:2}
+.fine{font-size:12px;color:#6B7688;text-align:center;line-height:1.4;margin-top:-4px}
+
+/* search */
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;padding:24px 22px 40px;box-shadow:0 -16px 40px rgba(11,18,32,.14);z-index:3}
+.sheet-h{font-size:21px;font-weight:700;letter-spacing:-.02em;margin-bottom:14px}
+.dots::after{content:"";animation:dots 1.2s steps(4,end) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.steps{list-style:none;display:flex;flex-direction:column;gap:11px}
+.steps li{display:flex;align-items:center;gap:11px;font-size:14px;color:#98A2B3;transition:color .3s}
+.steps li i{width:20px;height:20px;border-radius:50%;border:2px solid #D5DCE5;flex:none;position:relative;transition:all .25s}
+.steps li.done{color:var(--ink)}
+.steps li.done i{background:var(--green2);border-color:var(--green2)}
+.steps li.done i::after{content:"";position:absolute;left:6px;top:2.5px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.steps li.active{color:var(--ink)}
+.steps li.active i{border-color:var(--green2);animation:spin .9s linear infinite;border-top-color:transparent}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* match */
+.found{display:flex;align-items:center;gap:8px}
+.found .ok{width:26px;height:26px;border-radius:50%;background:var(--green2);display:flex;align-items:center;justify-content:center}
+.found .ok svg{width:14px;height:14px}
+.meta-line{font-size:13px;color:#6B7688;margin-top:-8px}
+.match-card{padding:16px 18px;border-radius:18px;border:1px solid #E3E8EF;background:#fff;box-shadow:0 10px 30px rgba(11,18,32,.08)}
+.mc-row{display:flex;align-items:flex-end;gap:28px}
+.stat .sv{font-size:32px;font-weight:700;letter-spacing:-.03em;line-height:1;white-space:nowrap}
+.stat .sl{font-size:12px;color:#6B7688;margin-top:4px}
+.pill-res{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border-radius:999px;background:var(--green-soft);color:var(--green2);font-size:12px;font-weight:700;white-space:nowrap;flex:none}
+.pill-res svg{width:11px;height:11px}
+.mc-sub{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;color:#4B5768;margin-top:12px;padding-top:12px;border-top:1px solid #EEF1F5}
+.opts{display:flex;flex-direction:column;gap:7px}
+.opt-card{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border-radius:15px;border:1.5px solid #E3E8EF;background:#fff;text-align:left;transition:border-color .2s,background .2s,transform .12s;position:relative}
+.opt-card:active{transform:scale(.985)}
+.oc-tag{flex:none;display:inline-flex;align-items:center;gap:4px;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.02em;border:1.5px solid var(--c);color:var(--c);background:#fff}
+.oc-tag svg{width:11px;height:11px}
+.oc-main{flex:1;min-width:0}
+.oc-main b{display:block;font-size:14px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oc-main span{display:block;font-size:11.5px;color:#6B7688;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oc-price{flex:none;font-size:17px;font-weight:800;letter-spacing:-.02em}
+.opt-card.sel{border-color:var(--green2);background:rgba(42,182,79,.08)}
+.opt-card.sel .oc-tag{background:var(--c);color:#fff}
+.opt-card.sel .oc-price{color:var(--green2)}
+/* confirm */
+.scr-confirm{align-items:center;padding-top:96px}
+.check-wrap{width:96px;height:96px}
+.bigcheck{width:96px;height:96px}
+.bigcheck circle{fill:var(--green-soft);stroke:var(--green2);stroke-width:4;stroke-dasharray:277;stroke-dashoffset:277}
+.bigcheck path{fill:none;stroke:var(--green2);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60}
+.scr.on .bigcheck circle{animation:draw .6s ease forwards}
+.scr.on .bigcheck path{animation:draw .4s ease .5s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.res-card{width:100%;padding:18px 20px;border-radius:20px;border:1px solid #E3E8EF;background:#fff;box-shadow:0 12px 32px rgba(11,18,32,.08);text-align:left;opacity:0;transform:translateY(14px)}
+.scr.on .res-card{animation:up .5s ease .7s both}
+.rc-label{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--green2);font-weight:700}
+.rc-addr{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:6px 0 10px}
+.rc-row{display:flex;justify-content:space-between;font-size:15px;font-weight:500;padding:10px 0;border-top:1px solid #EEF1F5}
+.rc-row.muted{font-size:12.5px;color:#6B7688;font-weight:400}
+.rc-price{font-weight:700}
+.spacer{flex:1}
+.scr-confirm .btn-primary{opacity:0}
+.scr.on.scr-confirm .btn-primary{animation:up .5s ease 1s both}
+
+/* nav */
+.nav-banner{position:absolute;top:0;left:0;right:0;background:var(--ink);color:#fff;padding:58px 20px 16px;z-index:3;border-radius:0 0 22px 22px;box-shadow:0 12px 30px rgba(11,18,32,.3)}
+.nb-main{display:flex;align-items:baseline;gap:10px}
+.nb-eta{font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1;white-space:nowrap}
+.nb-to{font-size:17px;font-weight:600;color:#C7D0DC;white-space:nowrap}
+.nb-turn{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:14px;color:#E5EAF1;font-weight:500}
+.nb-turn .tic{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex:none}
+.nb-turn .tic svg{width:18px;height:18px}
+.nav-foot{position:absolute;left:12px;right:12px;bottom:26px;background:#fff;border-radius:22px;padding:16px 18px;z-index:3;box-shadow:0 16px 40px rgba(11,18,32,.18)}
+.nf-title{font-size:19px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+.nf-title .ok{width:22px;height:22px;border-radius:50%;background:var(--green2);display:flex;align-items:center;justify-content:center}
+.nf-title .ok svg{width:12px;height:12px}
+.nf-sub{font-size:13px;color:#6B7688;margin-top:4px}
+.legend{display:flex;gap:14px;margin-top:12px;padding-top:12px;border-top:1px solid #EEF1F5;font-size:12px;color:#4B5768;font-weight:500}
+.lg{display:flex;align-items:center;gap:6px}
+.lg::before{content:"";width:18px;height:3px;border-radius:2px;background:var(--green2)}
+.lg.walk::before{background:repeating-linear-gradient(90deg,var(--ink) 0 4px,transparent 4px 7px)}
+
+/* ---------- Map SVG modes ---------- */
+.map-svg .drive-bg,.map-svg .drive,.map-svg .walk,.map-svg .car,.map-svg .pulse,.map-svg .alt,.map-svg .opt,.map-svg .walk-pill{display:none}
+.map-svg .opt .lbl{display:none}
+.map-svg .opt .halo{display:none}
+.m-search .alt,.m-search .opt,.m-search .pulse{display:block}
+.m-match .alt,.m-match .opt,.m-match .walk,.m-match .walk-pill{display:block}
+.m-match .alt{opacity:.5}
+.m-match .opt:not(.sel) .mk{opacity:.85;transform:scale(.8);transform-box:fill-box;transform-origin:center}
+.m-match .opt:not(.sel) .dot{fill:#7C8797}
+.m-match .opt.sel .lbl,.m-nav .opt.sel .lbl{display:block}
+.m-match .opt.sel .halo,.m-nav .opt.sel .halo{display:block}
+.m-nav .drive-bg,.m-nav .drive,.m-nav .car,.m-nav .opt.sel,.m-nav .walk{display:block}
+.m-nav .walk{opacity:0;transition:opacity .5s}
+.m-nav.arrived .walk{opacity:1}
+.m-nav.arrived .walk-pill{display:block}
+.map-svg .pulse circle{fill:none;stroke:#2AB64F;stroke-width:2;transform-box:fill-box;transform-origin:center;animation:pulse 1.5s ease-out infinite}
+.map-svg .pulse .p2{animation-delay:.75s}
+@keyframes pulse{0%{transform:scale(.15);opacity:.9}100%{transform:scale(2.6);opacity:0}}
+.m-search .alt .mk{transform-box:fill-box;transform-origin:center;animation:blink .45s ease-in-out 4 alternate}
+.m-search .alt:nth-of-type(2) .mk{animation-delay:.15s}
+.m-search .alt:nth-of-type(3) .mk{animation-delay:.3s}
+.m-search .opt .mk{transform-box:fill-box;transform-origin:center;animation:blink .45s ease-in-out 2 alternate,pop .5s cubic-bezier(.2,.8,.2,1) 1.05s both}
+.m-search .opt-b .mk{animation-delay:.1s,1.2s}
+.m-search .opt-c .mk{animation-delay:.2s,1.35s}
+@keyframes blink{from{opacity:.25}to{opacity:1}}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.45)}100%{transform:scale(1.15)}}
+.map-svg .walk{stroke-dasharray:6 5;animation:dash 1.1s linear infinite}
+@keyframes dash{to{stroke-dashoffset:-22}}
+.m-match .opt .halo,.m-nav .opt .halo{fill:#2AB64F;opacity:.25;transform-box:fill-box;transform-origin:center;animation:halo 1.8s ease-out infinite}
+@keyframes halo{0%{transform:scale(.6);opacity:.45}100%{transform:scale(2.2);opacity:0}}
+
+/* ---------- Wow moment ---------- */
+.wow{position:fixed;left:calc(50% + 10px);right:5%;top:50%;transform:translateY(-50%);z-index:9;opacity:0;pointer-events:none;transition:opacity .6s;text-align:left;display:flex;flex-direction:column;gap:clamp(10px,1.6vh,20px)}
+.wow.show{opacity:1}
+.wow .l{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.2,1);font-size:clamp(32px,3.8vw,64px);font-weight:800;letter-spacing:-.025em;line-height:1.05}
+.wow .l.in{opacity:1;transform:none}
+.wow .l0{font-size:clamp(18px,1.7vw,28px);font-weight:500;color:var(--muted);letter-spacing:-.01em;margin-bottom:8px}
+.wow .l.in.dim{opacity:.45}
+.wow .l4{font-size:clamp(15px,1.25vw,22px);font-weight:700;color:var(--green);letter-spacing:.18em;text-transform:uppercase;margin-top:14px}
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <!-- 01 PROBLEM -->
+  <section class="slide s1">
+    <h1 class="h1 up">Parking shouldn't be <span class="hl-o">this hard.</span></h1>
+    <div class="scene up" style="--d:.15s">
+      <svg class="s1map" viewBox="0 0 900 400" xmlns="http://www.w3.org/2000/svg">
+
+        <!-- city blocks -->
+        <g fill="#111113">
+          <rect x="8" y="8" width="94" height="54" rx="6"/><rect x="118" y="8" width="214" height="54" rx="6"/><rect x="348" y="8" width="204" height="54" rx="6"/><rect x="568" y="8" width="214" height="54" rx="6"/><rect x="798" y="8" width="94" height="54" rx="6"/>
+          <rect x="8" y="78" width="94" height="84" rx="6"/><rect x="118" y="78" width="214" height="84" rx="6"/><rect x="348" y="78" width="204" height="84" rx="6"/><rect x="568" y="78" width="214" height="84" rx="6"/><rect x="798" y="78" width="94" height="84" rx="6"/>
+          <rect x="8" y="178" width="94" height="104" rx="6"/><rect x="118" y="178" width="214" height="104" rx="6"/><rect x="568" y="178" width="214" height="104" rx="6"/><rect x="798" y="178" width="94" height="104" rx="6"/>
+          <rect x="8" y="298" width="94" height="102" rx="6"/><rect x="118" y="298" width="214" height="102" rx="6"/><rect x="348" y="298" width="204" height="102" rx="6"/><rect x="568" y="298" width="214" height="102" rx="6"/><rect x="798" y="298" width="94" height="102" rx="6"/>
+        </g>
+        <!-- roads -->
+        <g stroke="#1F1F23" stroke-width="16" fill="none">
+          <path d="M110,0 V400"/><path d="M340,0 V400"/><path d="M560,0 V400"/><path d="M790,0 V400"/>
+          <path d="M0,70 H900"/><path d="M0,170 H900"/><path d="M0,290 H900"/>
+        </g>
+        <!-- street names -->
+        <g font-size="9" fill="#8E8E93" font-weight="800" letter-spacing=".14em">
+          <text x="640" y="73.5" text-anchor="middle">DUKE ST</text>
+          <text x="680" y="173.5" text-anchor="middle">PRINCE ST</text>
+          <text x="680" y="293.5" text-anchor="middle">SACKVILLE ST</text>
+          <text transform="translate(113,240) rotate(-90)" text-anchor="middle">BRUNSWICK ST</text>
+          <text transform="translate(343,120) rotate(-90)" text-anchor="middle">MARKET ST</text>
+          <text transform="translate(563,120) rotate(-90)" text-anchor="middle">ARGYLE ST</text>
+          <text transform="translate(793,240) rotate(-90)" text-anchor="middle">GRAFTON ST</text>
+        </g>
+
+        <!-- Duke St metered curb: every bay taken -->
+        <g>
+          <g fill="#3A3A3C">
+            <rect x="356" y="63" width="26" height="12" rx="4"/><rect x="388" y="63" width="26" height="12" rx="4"/><rect x="420" y="63" width="26" height="12" rx="4"/><rect x="452" y="63" width="26" height="12" rx="4"/><rect x="484" y="63" width="26" height="12" rx="4"/><rect x="516" y="63" width="26" height="12" rx="4"/>
+          </g>
+          <g stroke="#6E6E73" stroke-width="1.5"><path d="M369,60 V54"/><path d="M401,60 V54"/><path d="M433,60 V54"/><path d="M465,60 V54"/><path d="M497,60 V54"/><path d="M529,60 V54"/></g>
+          <g fill="#6E6E73"><circle cx="369" cy="52" r="2.5"/><circle cx="401" cy="52" r="2.5"/><circle cx="433" cy="52" r="2.5"/><circle cx="465" cy="52" r="2.5"/><circle cx="497" cy="52" r="2.5"/><circle cx="529" cy="52" r="2.5"/></g>
+          <text x="348" y="40" font-size="11.5" fill="#fff" font-weight="700">Street meters <tspan fill="#FF9F0A">$2.50/hr · 2h max</tspan></text>
+          <rect x="556" y="27" width="50" height="17" rx="8.5" fill="#FF453A"/><text x="581" y="39" font-size="9.5" fill="#fff" font-weight="800" text-anchor="middle">0 FREE</text>
+        </g>
+
+        <!-- Convention centre + ring of circling cars -->
+        <path id="ring" d="M352,170 H548 a12,12 0 0 1 12,12 V278 a12,12 0 0 1 -12,12 H352 a12,12 0 0 1 -12,-12 V182 a12,12 0 0 1 12,-12 Z" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="6" stroke-dasharray="6 6"/>
+        <rect x="364" y="192" width="172" height="76" rx="10" fill="#1C1C1E" stroke="rgba(255,255,255,.28)"/>
+        <text x="450" y="228" text-anchor="middle" font-size="11" fill="#fff" font-weight="800" letter-spacing=".12em">HALIFAX</text>
+        <text x="450" y="244" text-anchor="middle" font-size="11" fill="#fff" font-weight="800" letter-spacing=".12em">CONVENTION CENTRE</text>
+        <g transform="translate(450,188)"><path d="M0,0 C-8,-11 -15,-17 -15,-27 a15,15 0 0 1 30,0 c0,10 -7,16 -15,27z" fill="#30D158"/><circle cy="-27" r="5.5" fill="#000"/></g>
+        <g><rect x="-13" y="-7" width="26" height="14" rx="4.5" fill="#F5F7FA"/><rect x="-4" y="-5" width="10" height="10" rx="2" fill="#000" opacity=".6"/>
+          <animateMotion dur="6s" repeatCount="indefinite" rotate="auto"><mpath href="#ring"/></animateMotion></g>
+        <g><rect x="-13" y="-7" width="26" height="14" rx="4.5" fill="#A1A1A6"/><rect x="-4" y="-5" width="10" height="10" rx="2" fill="#000" opacity=".6"/>
+          <animateMotion dur="6s" begin="-3s" repeatCount="indefinite" rotate="auto"><mpath href="#ring"/></animateMotion></g>
+
+        <!-- Sackville St: no-parking window -->
+        <g transform="translate(366,304)">
+          <rect width="168" height="44" rx="10" fill="#151517" stroke="rgba(255,69,58,.55)"/>
+          <circle cx="18" cy="22" r="9" fill="none" stroke="#FF453A" stroke-width="2.5"/><path d="M12,16 L24,28" stroke="#FF453A" stroke-width="2.5"/>
+          <text x="34" y="19" font-size="11.5" fill="#FF453A" font-weight="800">NO PARKING 4–6 PM</text>
+          <text x="34" y="34" font-size="10" fill="#A1A1A6" font-weight="600">Tow-away zone · $150 fine</text>
+        </g>
+
+        <!-- Parking lots & garages with different pricing -->
+        <g transform="translate(128,88)">
+          <rect width="192" height="80" rx="12" fill="#151517" stroke="rgba(255,255,255,.18)"/>
+          <text x="14" y="24" font-size="13" fill="#fff" font-weight="700">Scotia Square Garage</text>
+          <text x="14" y="44" font-size="11.5" fill="#FF9F0A" font-weight="600">$4.50/hr · event flat $28</text>
+          <rect x="14" y="54" width="42" height="17" rx="8.5" fill="#FF453A"/><text x="35" y="66" font-size="9.5" fill="#fff" font-weight="800" text-anchor="middle">FULL</text>
+        </g>
+        <g transform="translate(582,88)">
+          <rect width="192" height="80" rx="12" fill="#151517" stroke="rgba(255,255,255,.18)"/>
+          <text x="14" y="24" font-size="13" fill="#fff" font-weight="700">Argyle St Lot</text>
+          <text x="14" y="44" font-size="11.5" fill="#FF9F0A" font-weight="600">Flat $20 after 5 PM</text>
+          <rect x="14" y="54" width="74" height="17" rx="8.5" fill="#FF9F0A"/><text x="51" y="66" font-size="9.5" fill="#000" font-weight="800" text-anchor="middle">CASH ONLY</text>
+        </g>
+        <g transform="translate(582,198)">
+          <rect width="192" height="80" rx="12" fill="#151517" stroke="rgba(255,255,255,.18)"/>
+          <text x="14" y="24" font-size="13" fill="#fff" font-weight="700">Nova Hotel Valet</text>
+          <text x="14" y="44" font-size="11.5" fill="#FF9F0A" font-weight="600">$35 · guests only</text>
+          <rect x="14" y="54" width="60" height="17" rx="8.5" fill="#3A3A3C"/><text x="44" y="66" font-size="9.5" fill="#fff" font-weight="800" text-anchor="middle">GUESTS</text>
+        </g>
+        <g transform="translate(582,314)">
+          <rect width="192" height="80" rx="12" fill="#151517" stroke="rgba(255,255,255,.18)"/>
+          <text x="14" y="24" font-size="13" fill="#fff" font-weight="700">Grafton Lot</text>
+          <text x="14" y="44" font-size="11.5" fill="#FF9F0A" font-weight="600">$15 evening flat</text>
+          <rect x="14" y="54" width="42" height="17" rx="8.5" fill="#FF453A"/><text x="35" y="66" font-size="9.5" fill="#fff" font-weight="800" text-anchor="middle">FULL</text>
+        </g>
+        <g transform="translate(842,240) rotate(-90)">
+          <rect x="-52" y="-10" width="104" height="20" rx="10" fill="#151517" stroke="rgba(255,255,255,.18)"/>
+          <text y="4" font-size="9.5" fill="#FF453A" font-weight="800" text-anchor="middle" letter-spacing=".06em">PERMIT ONLY · ZONE 3</text>
+        </g>
+
+      </svg>
+    </div>
+    <div class="journey up" style="--d:.3s">
+      <span class="pill">Drive</span><span class="jarr">→</span><span class="pill">Search</span><span class="jarr">→</span><span class="pill">Circle</span><span class="jarr">→</span><span class="pill bad">Stress</span>
+    </div>
+    <p class="sub stat up" style="--d:.45s"><strong>10 min</strong> drive <span class="plus">+</span> <span class="hl-o"><strong>10 min</strong> finding parking</span></p>
+  </section>
+
+  <!-- 02 INSIGHT -->
+  <section class="slide s2">
+    <h1 class="h1 up">What if parking <span class="hl">found you?</span></h1>
+    <div class="s2grid">
+      <div class="flow">
+        <div class="fbox up" style="--d:.2s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-7.4 7-13a7 7 0 1 0-14 0c0 5.6 7 13 7 13z"/><circle cx="12" cy="9" r="2.5"/></svg>DESTINATION</div>
+        <div class="fline" style="--d:.55s"></div>
+        <div class="fbox green up" style="--d:.8s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>PARKING MATCH</div>
+        <div class="fline" style="--d:1.15s"></div>
+        <div class="fbox up" style="--d:1.4s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l1.6-4.5A2 2 0 0 1 8.5 6h7a2 2 0 0 1 1.9 1.5L19 12v6H5z"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>YOU</div>
+      </div>
+      <div class="s2txt">
+        <div class="strike up" style="--d:.5s">Search for parking</div>
+        <div class="big up" style="--d:1.1s">Parking finds you.</div>
+        <p class="sub up" style="--d:1.5s">Parking is already there.<br>We just need to match you with it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 PRODUCT -->
+  <section class="slide s3">
+    <h1 class="h1 up">Parking, in <span class="hl">one tap.</span></h1>
+  </section>
+
+  <!-- 04 LIVE DEMO -->
+  <section class="slide s4">
+    <div class="tag up">Live demo</div>
+  </section>
+
+  <!-- 05 BUSINESS -->
+  <section class="slide s5">
+    <h1 class="h1 up">Every parking trip becomes <span class="hl">a transaction.</span></h1>
+    <div class="avg up" style="--d:.12s">Average booking <strong>$13.50</strong></div>
+    <div class="txn up" style="--d:.24s">
+      <div class="tcard"><div class="tl">Driver</div><div class="tv">$13.50</div><div class="ts">pays</div></div>
+      <div class="tarrow">→</div>
+      <div class="tcard orange"><div class="tl">Host</div><div class="tv">$10.00</div><div class="ts">earns</div></div>
+      <div class="tarrow">→</div>
+      <div class="tcard"><div class="tl">Liability</div><div class="tv">$1.50</div><div class="ts">coverage</div></div>
+      <div class="tarrow">→</div>
+      <div class="tcard green"><div class="tl">Platform</div><div class="tv">$2.00</div><div class="ts">fee</div></div>
+    </div>
+    <div class="divider up" style="--d:.38s"><span>Year 1 targets</span></div>
+    <div class="targets up" style="--d:.5s">
+      <div class="target">
+        <div class="ticon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 19v-5M12 19V9M18 19V4"/></svg></div>
+        <div class="tnum"><strong>1,000</strong><span>bookings / month</span></div>
+        <div class="bars"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i></div>
+      </div>
+      <div class="target green">
+        <div class="ticon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M16.5 7.5c0-1.7-2-3-4.5-3S7.5 5.8 7.5 7.5 9.5 10 12 10s4.5 1.3 4.5 3-2 3-4.5 3-4.5-1.3-4.5-3"/></svg></div>
+        <div class="tnum"><strong>$24,000</strong><span>ARR</span></div>
+        <svg class="wave" viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M0,50 C40,48 60,30 100,32 C140,34 160,10 200,6 L200,60 L0,60 Z" fill="rgba(48,209,88,.16)"/><path d="M0,50 C40,48 60,30 100,32 C140,34 160,10 200,6" fill="none" stroke="#30D158" stroke-width="2.5"/></svg>
+      </div>
+    </div>
+    <div class="foot up" style="--d:.62s">Illustrative model.</div>
+  </section>
+
+  <!-- 06 VISION -->
+  <section class="slide s7">
+    <h1 class="h1 xl up">You don't find parking.<br><span class="hl">Parking finds you.</span></h1>
+    <div class="closing up" style="--d:.6s">Tell us where you're going.<br>We'll handle the parking.</div>
+    <div class="logo up" style="--d:1.2s">
+      <svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M17,84 V22 L67,84 V52" fill="none" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><path d="M17,84 V22 L67,84 V52" fill="none" stroke="#000000" stroke-width="2.6" stroke-dasharray="6.5 6" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(67,24)"><path d="M0,22 C-6,13 -14,7 -14,-2 a14,14 0 0 1 28,0 c0,9 -8,15 -14,24z" fill="#22C55E"/><text y="4" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">P</text><circle cy="14.5" r="2.4" fill="#fff"/></g></svg>
+      <span class="wm"><em>Navi</em>Parking</span> <small>PARKING THAT FINDS YOU</small>
+    </div>
+  </section>
+</div>
+
+<!-- PHONE (shared by slides 3 & 4) -->
+<div class="phone-layer" id="phoneLayer">
+  <div class="phone">
+    <div class="screen-wrap">
+      <div class="island"></div>
+      <div class="statusbar" id="statusbar"><span>6:12</span><span class="sb-icons"><i class="sb-sig"></i><i class="sb-bat"></i></span></div>
+
+      <!-- STATE 1: destination -->
+      <div class="scr on" id="scr-home">
+        <div class="app-top">
+          <span class="wordmark"><svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M17,84 V22 L67,84 V52" fill="none" stroke="#0B0B0C" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><path d="M17,84 V22 L67,84 V52" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-dasharray="6.5 6" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(67,24)"><path d="M0,22 C-6,13 -14,7 -14,-2 a14,14 0 0 1 28,0 c0,9 -8,15 -14,24z" fill="#22C55E"/><text y="4" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">P</text><circle cy="14.5" r="2.4" fill="#fff"/></g></svg><span class="wm"><em>Navi</em>Parking</span></span>
+          <span class="avatar">Y</span>
+        </div>
+        <h2 class="app-h">Where are you going?</h2>
+        <div class="dest-card">
+          <div class="ic pin"><svg viewBox="0 0 24 24" fill="none" stroke="#2AB64F" stroke-width="2.2"><path d="M12 22s7-7.4 7-13a7 7 0 1 0-14 0c0 5.6 7 13 7 13z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
+          <div><div class="dest">Halifax Convention Centre</div><div class="dest-sub">1650 Argyle St · Downtown Halifax</div></div>
+        </div>
+        <div class="meta-row">
+          <div class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Tonight · 6:45 PM</div>
+          <div class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l1.6-4.5A2 2 0 0 1 8.5 6h7a2 2 0 0 1 1.9 1.5L19 12v6H5z"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>Sedan</div>
+          <div class="meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h6"/></svg>Prefs</div>
+        </div>
+        <div class="map" data-map="home"></div>
+        <button class="btn-primary" id="btnFind">Find My Parking</button>
+        <div class="fine">We'll find, reserve and navigate you to the best available spot.</div>
+      </div>
+
+      <!-- STATE 2: searching -->
+      <div class="scr edge" id="scr-search">
+        <div class="map full" data-map="search"></div>
+        <div class="sheet">
+          <div class="sheet-h">Finding the best spot<span class="dots"></span></div>
+          <ul class="steps" id="steps">
+            <li><i></i>Checking 14 spots near your destination</li>
+            <li><i></i>Comparing walk time, price and availability</li>
+            <li><i></i>Picking 3 spots that fit your preferences</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- STATE 3: three options -->
+      <div class="scr scr-match" id="scr-match">
+        <h2 class="app-h found"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>3 spots for you.</h2>
+        <div class="meta-line">Picked from 14 nearby · based on your preferences</div>
+        <div class="opts" id="opts">
+          <button class="opt-card sel" data-spot="a" style="--c:#2AB64F"><span class="oc-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 22s7-7.4 7-13a7 7 0 1 0-14 0c0 5.6 7 13 7 13z"/></svg>Closest</span><span class="oc-main"><b>123 Example Street</b><span>Private driveway · 3 min walk</span></span><span class="oc-price">$12</span></button>
+          <button class="opt-card" data-spot="b" style="--c:#0A84FF"><span class="oc-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M3 11l9-7 9 7v9H3z"/></svg>Indoor</span><span class="oc-main"><b>Scotia Square Garage</b><span>Covered garage · 5 min walk</span></span><span class="oc-price">$18</span></button>
+          <button class="opt-card" data-spot="c" style="--c:#E8890C"><span class="oc-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 3v18M17 7H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"/></svg>Cheapest</span><span class="oc-main"><b>Grafton Street Lot</b><span>Open-air lot · 8 min walk</span></span><span class="oc-price">$8</span></button>
+        </div>
+        <div class="map" data-map="match"></div>
+        <button class="btn-primary" id="btnReserve">Reserve &amp; Go</button>
+      </div>
+
+      <!-- STATE 4: reserved -->
+      <div class="scr scr-confirm" id="scr-confirm">
+        <div class="check-wrap"><svg class="bigcheck" viewBox="0 0 96 96"><circle cx="48" cy="48" r="44"/><path d="M30 50l12 12 24-26"/></svg></div>
+        <h2 class="app-h c">You're all set.</h2>
+        <div class="res-card">
+          <div class="rc-label">Parking reserved</div>
+          <div class="rc-addr" id="rcAddr">123 Example Street</div>
+          <div class="rc-row"><span>6:30 PM – 10:30 PM</span><span class="rc-price" id="rcPrice">$12</span></div>
+          <div class="rc-row muted"><span id="rcSub">Private driveway · 3 min walk to Halifax Convention Centre</span></div>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn-primary" id="btnNav">Start Navigation</button>
+      </div>
+
+      <!-- STATE 5: navigation -->
+      <div class="scr edge" id="scr-nav">
+        <div class="map full" data-map="nav"></div>
+        <div class="nav-banner">
+          <div class="nb-main"><div class="nb-eta" id="navEta">3 min</div><div class="nb-to" id="navTo">→ Parking</div></div>
+          <div class="nb-turn"><span class="tic"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></span><span id="navTurn">Head north on Brunswick St</span></div>
+        </div>
+        <div class="nav-foot">
+          <div class="nf-title"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>Spot reserved for you.</div>
+          <div class="nf-sub" id="navSub">123 Example Street · held until 10:30 PM</div>
+          <div class="legend"><span class="lg">You → Parking</span><span class="lg walk">Parking → Destination</span></div>
+        </div>
+      </div>
+
+      <div class="homebar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- WOW MOMENT -->
+<div class="wow" id="wow">
+  <div class="l l0">We don't help you search for parking.</div>
+  <div class="l l1">We find it for you.</div>
+  <div class="l l2">We reserve it.</div>
+  <div class="l l3">We take you there.</div>
+  <div class="l l4">One tap. Reserved. Guided. Done.</div>
+</div>
+
+<div class="hud">
+  <div class="brand"><svg class="mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M17,84 V22 L67,84 V52" fill="none" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/><path d="M17,84 V22 L67,84 V52" fill="none" stroke="#000000" stroke-width="2.6" stroke-dasharray="6.5 6" stroke-linecap="round" stroke-linejoin="round"/><g transform="translate(67,24)"><path d="M0,22 C-6,13 -14,7 -14,-2 a14,14 0 0 1 28,0 c0,9 -8,15 -14,24z" fill="#22C55E"/><text y="4" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">P</text><circle cy="14.5" r="2.4" fill="#fff"/></g></svg><span class="wm"><em>Navi</em>Parking</span></div>
+  <div class="progress" id="progress">01 / 06</div>
+</div>
+
+<script>
+/* =========================================================
+   MAP — stylized downtown (inline SVG, no external deps)
+   ========================================================= */
+const SPOTS = {
+  a:{tag:'Closest', name:'123 Example Street', type:'Private driveway', walk:3, price:12, driveMins:3, x:190, y:118, label:'123 Example St',
+     drive:'M50,392 V140 H210 V118 H192', walkPath:'M190,118 H210 V140 H250 V152', pill:[232,127],
+     turns:[[0,'Head north on Brunswick St'],[195,'Turn right onto Prince St · 60 m'],[252,'Continue on Prince St'],[395,'Turn left onto Grafton St'],[420,'Turn left into the driveway']]},
+  b:{tag:'Indoor', name:'Scotia Square Garage', type:'Covered garage', walk:5, price:18, driveMins:2, x:176, y:262, label:'Scotia Square Garage',
+     drive:'M50,392 V300 H176 V272', walkPath:'M176,262 V220 H250 V208', pill:[148,241],
+     turns:[[0,'Head north on Brunswick St'],[55,'Turn right onto Blowers St · 40 m'],[92,'Continue on Blowers St'],[200,'Turn left into the garage']]},
+  c:{tag:'Cheapest', name:'Grafton Street Lot', type:'Open-air lot', walk:8, price:8, driveMins:2, x:250, y:340, label:'Grafton St Lot',
+     drive:'M50,392 V380 H250 V352', walkPath:'M250,340 V300 H290 V220 H250 V208', pill:[270,316],
+     turns:[[0,'Head north on Brunswick St'],[12,'Turn right onto Spring Garden Rd'],[190,'Turn left into the lot']]}
+};
+let selected = 'a';
+
+function mapSVG(mode){
+  const vb = {home:'0 30 360 300', search:'0 -60 300 640', match:'20 92 340 272', nav:'0 -85 300 640'}[mode];
+  const xs=[-60,50,130,210,290,340], ys=[-140,-60,60,140,220,300,380,460,540,620,700];
+  let blocks='';
+  for(let i=0;i<xs.length-1;i++)for(let j=0;j<ys.length-1;j++){
+    const x=xs[i]+8,y=ys[j]+8,w=xs[i+1]-xs[i]-16,h=ys[j+1]-ys[j]-16;
+    blocks+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5"/>`;
+  }
+  const bld=[[62,70,26,22],[96,70,22,30],[62,150,30,20],[100,156,22,26],[144,72,40,24],[150,150,30,24],[186,150,16,40],[222,70,24,44],[256,70,22,24],[146,308,40,26],[226,232,24,26],[262,236,18,22],[144,392,44,20],[62,306,20,30],[62,470,40,24],[150,472,30,30],[226,468,50,26],[100,550,22,26],[146,552,44,22],[230,552,26,26],[62,-46,30,24],[150,-48,40,26],[228,-50,46,28]]
+    .map(b=>`<rect x="${b[0]}" y="${b[1]}" width="${b[2]}" height="${b[3]}" rx="3" fill="#D3DAE4"/>`).join('');
+  const alt=(x,y,tag,fill)=>`<g class="alt" transform="translate(${x},${y})"><g class="mk"><circle r="10" fill="#94A3B8"/><text y="4" text-anchor="middle" font-size="11" font-weight="800" fill="#fff">P</text><g transform="translate(0,-19)"><rect x="-17" y="-8" width="34" height="14" rx="7" fill="${fill}"/><text y="2.6" font-size="7.5" fill="#fff" font-weight="800" text-anchor="middle">${tag}</text></g></g></g>`;
+  const opt=(id)=>{ const o=SPOTS[id]; const w=o.label.length*4.6+16;
+    return `<g class="opt opt-${id}${id===selected?' sel':''}" data-spot="${id}" transform="translate(${o.x},${o.y})"><g class="mk"><circle class="halo" r="12"/><circle class="dot" r="12" fill="#2AB64F" stroke="#fff" stroke-width="2.5"/><text y="4.5" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">P</text></g><g class="lbl" transform="translate(0,23)"><rect x="${-w/2}" y="-9" width="${w}" height="18" rx="9" fill="#0B1220"/><text y="3.4" text-anchor="middle" fill="#fff" font-size="8.2" font-weight="700">${o.label}</text></g></g>`; };
+  const sp = SPOTS[selected];
+  return `<svg class="map-svg m-${mode}" viewBox="${vb}" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <rect x="-200" y="-200" width="800" height="1000" fill="#EAEEF3"/>
+    <g fill="#E0E6ED">${blocks}</g>
+    ${bld}
+    <rect x="60" y="230" width="60" height="60" rx="6" fill="#D2E5CD"/>
+    <path d="M324,-200 C338,20 310,110 328,180 C346,250 316,320 332,520 C340,620 320,700 330,800 L520,800 L520,-200 Z" fill="#C4DAEE"/>
+    <text transform="translate(347,215) rotate(90)" font-size="7.5" fill="#7FA0C4" font-weight="700" letter-spacing=".12em" text-anchor="middle">HALIFAX HARBOUR</text>
+    <g stroke="#FFFFFF" stroke-width="12" fill="none" stroke-linecap="round">
+      <path d="M50,-200 V800"/><path d="M130,-200 V800"/><path d="M210,-200 V800"/><path d="M290,-200 V800"/>
+      <path d="M-200,-60 H330"/><path d="M-200,60 H328"/><path d="M-200,140 H326"/><path d="M-200,220 H330"/><path d="M-200,300 H322"/><path d="M-200,380 H330"/><path d="M-200,460 H326"/><path d="M-200,540 H330"/><path d="M-200,620 H326"/>
+    </g>
+    <g font-size="6.8" fill="#9AA6B6" font-weight="700" letter-spacing=".08em">
+      <text x="140" y="57">DUKE ST</text><text x="140" y="137">PRINCE ST</text><text x="140" y="217">SACKVILLE ST</text><text x="140" y="297">BLOWERS ST</text><text x="140" y="377">SPRING GARDEN RD</text>
+      <text transform="translate(47,270) rotate(-90)">BRUNSWICK ST</text><text transform="translate(127,270) rotate(-90)">ARGYLE ST</text><text transform="translate(207,270) rotate(-90)">GRAFTON ST</text><text transform="translate(287,270) rotate(-90)">BARRINGTON ST</text>
+    </g>
+    <rect x="222" y="152" width="56" height="56" rx="6" fill="#C5CFDC"/>
+    <rect x="230" y="160" width="40" height="40" rx="4" fill="#B7C3D2"/>
+    <path class="drive-bg" d="${sp.drive}" fill="none" stroke="#B9C3D0" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="drive" d="${sp.drive}" fill="none" stroke="#2AB64F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path class="walk" d="${sp.walkPath}" fill="none" stroke="#0B1220" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <g class="walk-pill" transform="translate(${sp.pill[0]},${sp.pill[1]})"><rect x="-24" y="-8" width="48" height="16" rx="8" fill="#fff" stroke="#D5DCE5"/><text class="walk-txt" y="3.2" text-anchor="middle" font-size="7.5" font-weight="700" fill="#0B1220">${sp.walk} min walk</text></g>
+    ${alt(90,340,'FULL','#FF453A')}${alt(250,264,'FULL','#FF453A')}${alt(170,28,'FULL','#FF453A')}
+    ${opt('a')}${opt('b')}${opt('c')}
+    <g class="pulse" transform="translate(250,178)"><circle class="p1" r="26"/><circle class="p2" r="26"/></g>
+    <g class="dest" transform="translate(250,178)"><path d="M0,0 C-8,-10 -14,-16 -14,-25 a14,14 0 0 1 28,0 c0,9 -6,15 -14,25z" fill="#0B1220"/><circle cy="-25" r="5" fill="#fff"/></g>
+    <g class="dest-label" transform="translate(250,214)"><rect x="-58" y="-9" width="116" height="18" rx="9" fill="#fff" stroke="#D5DCE5"/><text y="3.4" text-anchor="middle" font-size="8" font-weight="700" fill="#0B1220">Halifax Convention Centre</text></g>
+    <g class="car" transform="translate(50,392)"><circle r="14" fill="rgba(37,99,235,.18)"/><circle r="8.5" fill="#fff"/><circle r="6.5" fill="#2563EB"/><path d="M0,-3.4 L2.8,2.6 L-2.8,2.6 Z" fill="#fff"/></g>
+  </svg>`;
+}
+document.querySelectorAll('[data-map]').forEach(el=>{ el.innerHTML = mapSVG(el.dataset.map); });
+
+/* =========================================================
+   DEMO — deterministic app flow
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const screens = ['home','search','match','confirm','nav'];
+const phoneLayer = $('phoneLayer'), wow = $('wow'), statusbar = $('statusbar');
+let timers = [], wowTimers = [], raf = null;
+const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+const wowLater = (fn, ms) => wowTimers.push(setTimeout(fn, ms));
+function clearWowTimers(){ wowTimers.forEach(clearTimeout); wowTimers=[]; }
+function clearTimers(){ timers.forEach(clearTimeout); timers=[]; clearWowTimers(); if(raf){cancelAnimationFrame(raf); raf=null;} }
+// The phone screen must never scroll (overflow is hidden, but focus() can still nudge it)
+document.querySelectorAll('.screen-wrap,.scr').forEach(el=>el.addEventListener('scroll',()=>{el.scrollTop=0;el.scrollLeft=0;}));
+
+const Demo = {
+  state:'home',
+  show(name){
+    this.state = name;
+    screens.forEach(s => $('scr-'+s).classList.toggle('on', s===name));
+    statusbar.classList.toggle('light', name==='nav');
+  },
+  search(){
+    if(this.state!=='home') return;
+    clearTimers();
+    const lis = [...$('steps').querySelectorAll('li')];
+    lis.forEach(li=>li.className='');
+    this.show('search');
+    lis[0].classList.add('active');
+    later(()=>{lis[0].className='done'; lis[1].className='active';}, 420);
+    later(()=>{lis[1].className='done'; lis[2].className='active';}, 820);
+    later(()=>{lis[2].className='done';}, 1220);
+    later(()=>this.match(), 1550);
+  },
+  match(){ this.show('match'); },
+  reserve(){
+    const sp = SPOTS[selected];
+    $('rcAddr').textContent = sp.name; $('rcPrice').textContent = '$'+sp.price;
+    $('rcSub').textContent = `${sp.type} · ${sp.walk} min walk to Halifax Convention Centre`;
+    $('navEta').textContent = sp.driveMins+' min'; $('navTo').textContent='→ Parking';
+    $('navTurn').textContent = sp.turns[0][1];
+    $('navSub').textContent = `${sp.name} · held until 10:30 PM`;
+    this.show('confirm');
+  },
+  nav(){
+    this.show('nav');
+    startDrive();
+    wowLater(()=>startWow(), 2600);
+  },
+  reset(){
+    clearTimers();
+    hideWow();
+    const svg = document.querySelector('.m-nav');
+    svg.classList.remove('arrived');
+    svg.querySelector('.drive').style.strokeDashoffset = 0;
+    svg.querySelector('.car').setAttribute('transform','translate(50,392)');
+    selectSpot('a');
+    const sp = SPOTS.a;
+    $('navEta').textContent=sp.driveMins+' min'; $('navTo').textContent='→ Parking'; $('navTurn').textContent=sp.turns[0][1];
+    $('navSub').textContent=`${sp.name} · held until 10:30 PM`;
+    this.show('home');
+  }
+};
+
+function startDrive(){
+  const svg = document.querySelector('.m-nav');
+  const path = svg.querySelector('.drive'), car = svg.querySelector('.car');
+  const sp = SPOTS[selected];
+  const L = path.getTotalLength(); const dur = 6800; let t0 = null;
+  path.style.strokeDasharray = `${L} ${L}`; path.style.strokeDashoffset = 0;
+  svg.classList.remove('arrived');
+  const turns = sp.turns;
+  function frame(ts){
+    if(!t0) t0 = ts;
+    const t = Math.min(1,(ts-t0)/dur);
+    const e = t<.5 ? 2*t*t : -1+(4-2*t)*t;
+    const d = e*L;
+    const p = path.getPointAtLength(d), q = path.getPointAtLength(Math.min(L, d+2));
+    const ang = Math.atan2(q.y-p.y, q.x-p.x)*180/Math.PI + 90;
+    car.setAttribute('transform', `translate(${p.x.toFixed(2)},${p.y.toFixed(2)}) rotate(${ang.toFixed(1)})`);
+    path.style.strokeDashoffset = -d;
+    const mins = Math.max(1, Math.ceil(sp.driveMins*(1-e)));
+    $('navEta').textContent = e>.94 ? 'Arriving' : mins+' min';
+    let turn = turns[0][1]; for(const tt of turns){ if(d>=tt[0]) turn=tt[1]; }
+    $('navTurn').textContent = turn;
+    if(t<1) raf = requestAnimationFrame(frame); else arrive();
+  }
+  raf = requestAnimationFrame(frame);
+  function arrive(){
+    raf=null;
+    svg.classList.add('arrived');
+    $('navEta').textContent=sp.walk+' min'; $('navTo').textContent='walk → Convention Centre';
+    $('navTurn').textContent=`Parked · ${sp.walk} min walk to the venue`;
+    $('navSub').textContent=`Parked at ${sp.name} · held until 10:30 PM`;
+  }
+}
+
+function startWow(){
+  phoneLayer.classList.add('shift');
+  wow.classList.add('show');
+  const ls = [...wow.querySelectorAll('.l')];
+  ls.forEach(l=>l.classList.remove('in','dim'));
+  wowLater(()=>ls[0].classList.add('in'), 350);
+  wowLater(()=>ls[1].classList.add('in'), 1600);
+  wowLater(()=>ls[2].classList.add('in'), 2800);
+  wowLater(()=>ls[3].classList.add('in'), 4000);
+  wowLater(()=>ls[4].classList.add('in'), 5300);
+}
+function hideWow(){
+  clearWowTimers();
+  phoneLayer.classList.remove('shift');
+  wow.classList.remove('show');
+  wow.querySelectorAll('.l').forEach(l=>l.classList.remove('in','dim'));
+}
+
+/* Buttons — every one of them works */
+$('btnFind').addEventListener('click', e=>{ e.currentTarget.blur(); if(cur===2) go(3); Demo.search(); });
+$('btnReserve').addEventListener('click', e=>{ e.currentTarget.blur(); Demo.reserve(); });
+$('btnNav').addEventListener('click', e=>{ e.currentTarget.blur(); Demo.nav(); });
+function selectSpot(id){
+  selected = id;
+  document.querySelectorAll('.opt-card').forEach(c=>c.classList.toggle('sel', c.dataset.spot===id));
+  const sp = SPOTS[id];
+  document.querySelectorAll('.map-svg').forEach(svg=>{
+    svg.querySelectorAll('.opt').forEach(o=>o.classList.toggle('sel', o.dataset.spot===id));
+    svg.querySelector('.walk').setAttribute('d', sp.walkPath);
+    svg.querySelector('.drive').setAttribute('d', sp.drive);
+    svg.querySelector('.drive-bg').setAttribute('d', sp.drive);
+    svg.querySelector('.walk-pill').setAttribute('transform', `translate(${sp.pill[0]},${sp.pill[1]})`);
+    svg.querySelector('.walk-txt').textContent = sp.walk+' min walk';
+  });
+}
+document.querySelectorAll('.opt-card').forEach(c=>c.addEventListener('click', e=>{ e.currentTarget.blur(); selectSpot(c.dataset.spot); }));
+
+/* =========================================================
+   DECK — navigation
+   ========================================================= */
+const slides = [...document.querySelectorAll('.slide')];
+let cur = 0;
+function go(i){
+  i = Math.max(0, Math.min(slides.length-1, i));
+  cur = i;
+  slides.forEach((s,j)=>s.classList.toggle('active', j===i));
+  $('progress').textContent = String(i+1).padStart(2,'0') + ' / ' + String(slides.length).padStart(2,'0');
+  phoneLayer.classList.toggle('show', i===2 || i===3);
+  if(i!==3){ hideWow(); }
+  try{ history.replaceState(null,'','#'+(i+1)); }catch(_){}
+}
+function next(){ go(cur+1); } function prev(){ go(cur-1); }
+
+document.addEventListener('keydown', e=>{
+  if(e.target && e.target.tagName==='BUTTON') return;
+  switch(e.key){
+    case 'ArrowRight': case 'ArrowDown': case ' ': case 'Enter': case 'PageDown': e.preventDefault(); next(); break;
+    case 'ArrowLeft': case 'ArrowUp': case 'PageUp': case 'Backspace': e.preventDefault(); prev(); break;
+    case 'Home': go(0); break;
+    case 'End': go(slides.length-1); break;
+    case 'r': case 'R': Demo.reset(); break;
+    case 'f': case 'F': document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); break;
+  }
+});
+$('deck').addEventListener('click', e=>{
+  if(e.target.closest('.phone-layer, .wow, button, a')) return;
+  next();
+});
+
+/* Phone scale to viewport */
+function layout(){
+  const h = window.innerHeight;
+  const ps = Math.min(1.1, (h - 200) / 760);
+  const top = (h - 760*ps) / 2 + 52;
+  document.documentElement.style.setProperty('--ps', ps.toFixed(3));
+  document.documentElement.style.setProperty('--phone-top', top.toFixed(0)+'px');
+}
+window.addEventListener('resize', layout); layout();
+
+const start = parseInt(location.hash.slice(1)) || 1;
+go(start-1);
+</script>
+</body>
+</html>
